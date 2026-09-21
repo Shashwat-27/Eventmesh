@@ -37,3 +37,21 @@ Coming soon.
 ## Status
 
 🚧 Under active development.
+
+
+server.ts
+    │
+    └── starts server
+
+app.ts
+    │
+    ├── middleware
+    └── routes
+
+routes
+    │
+    └── controller
+
+controller
+    │
+    └── response
