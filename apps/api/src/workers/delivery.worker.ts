@@ -9,7 +9,7 @@ export const deliveryWorker = new Worker(
     const { deliveryId } = job.data;
 
     console.log(
-      `Processing delivery: ${deliveryId} | Attempt: ${job.attemptsMade + 1}`,
+      `Processing delivery: ${deliveryId} | Attempt: ${job.attemptsMade + 1}`
     );
 
     const delivery = await prisma.delivery.findUnique({
@@ -26,7 +26,7 @@ export const deliveryWorker = new Worker(
       throw new Error(`Delivery not found: ${deliveryId}`);
     }
 
-    await prisma.delivery.update({
+    const updatedDelivery = await prisma.delivery.update({
       where: {
         id: delivery.id,
       },
@@ -39,6 +39,9 @@ export const deliveryWorker = new Worker(
       },
     });
 
+    const attemptNumber = updatedDelivery.attempts;
+    const startedAt = Date.now();
+
     try {
       const requestBody = JSON.stringify({
         id: delivery.event.id,
@@ -48,22 +51,48 @@ export const deliveryWorker = new Worker(
 
       const signature = generateWebhookSignature(
         delivery.webhookEndpoint.secret,
-        requestBody,
+        requestBody
       );
 
-      const response = await fetch(delivery.webhookEndpoint.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-EventMesh-Signature": signature,
-          "X-EventMesh-Event-ID": delivery.event.id,
-        },
-        body: requestBody,
-      });
+      const response = await fetch(
+        delivery.webhookEndpoint.url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-EventMesh-Signature": signature,
+            "X-EventMesh-Event-ID": delivery.event.id,
+          },
+          body: requestBody,
+        }
+      );
+
+      const durationMs = Date.now() - startedAt;
 
       if (!response.ok) {
-        throw new Error(`Webhook returned HTTP ${response.status}`);
+        await prisma.deliveryAttempt.create({
+          data: {
+            deliveryId: delivery.id,
+            attemptNo: attemptNumber,
+            statusCode: response.status,
+            durationMs,
+            error: `Webhook returned HTTP ${response.status}`,
+          },
+        });
+
+        throw new Error(
+          `Webhook returned HTTP ${response.status}`
+        );
       }
+
+      await prisma.deliveryAttempt.create({
+        data: {
+          deliveryId: delivery.id,
+          attemptNo: attemptNumber,
+          statusCode: response.status,
+          durationMs,
+        },
+      });
 
       await prisma.delivery.update({
         where: {
@@ -75,7 +104,9 @@ export const deliveryWorker = new Worker(
         },
       });
 
-      console.log(`Webhook delivered successfully: ${delivery.id}`);
+      console.log(
+        `Webhook delivered successfully: ${delivery.id}`
+      );
 
       return {
         success: true,
@@ -91,7 +122,8 @@ export const deliveryWorker = new Worker(
       const maxAttempts = job.opts.attempts ?? 1;
       const currentAttempt = job.attemptsMade + 1;
 
-      const isFinalAttempt = currentAttempt >= maxAttempts;
+      const isFinalAttempt =
+        currentAttempt >= maxAttempts;
 
       await prisma.delivery.update({
         where: {
@@ -106,7 +138,7 @@ export const deliveryWorker = new Worker(
       console.error(
         `Webhook delivery failed: ${delivery.id}`,
         `attempt ${currentAttempt}/${maxAttempts}`,
-        message,
+        message
       );
 
       throw error;
@@ -114,13 +146,18 @@ export const deliveryWorker = new Worker(
   },
   {
     connection: redisConnection,
-  },
+  }
 );
 
 deliveryWorker.on("completed", (job) => {
-  console.log(`Delivery job completed: ${job.id}`);
+  console.log(
+    `Delivery job completed: ${job.id}`
+  );
 });
 
 deliveryWorker.on("failed", (job, error) => {
-  console.error(`Delivery job failed: ${job?.id}`, error.message);
+  console.error(
+    `Delivery job failed: ${job?.id}`,
+    error.message
+  );
 });

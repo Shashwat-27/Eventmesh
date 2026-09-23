@@ -23,8 +23,8 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  apiKeys ApiKey[]
+  tenant    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apiKeys   ApiKey[]
   endpoints WebhookEndpoint[]
   events    Event[]
 
@@ -95,11 +95,27 @@ model Delivery {
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
-  event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  webhookEndpoint WebhookEndpoint @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+  event           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  webhookEndpoint WebhookEndpoint   @relation(fields: [webhookEndpointId], references: [id], onDelete: Cascade)
+  attemptsHistory DeliveryAttempt[]
 
   @@index([eventId])
   @@index([webhookEndpointId])
   @@index([status])
   @@index([nextRetryAt])
+}
+
+model DeliveryAttempt {
+  id         String   @id @default(uuid()) @db.Uuid
+  deliveryId String   @db.Uuid
+  attemptNo  Int
+  statusCode Int?
+  durationMs Int?
+  error      String?
+  createdAt  DateTime @default(now())
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@index([deliveryId])
+  @@index([createdAt])
 }
