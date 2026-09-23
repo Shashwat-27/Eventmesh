@@ -6,6 +6,8 @@ import tenantRoutes from "./routes/tenant.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import { requestLogger } from "./middleware/request-logger.middleware.js";
 import projectRoutes from "./routes/project.routes.js";
+import apiKeyRoutes from "./routes/api-key.routes.js";
+import webhookEndpointRoutes from "./routes/webhook-endpoint.routes.js";
 
 
 const app = express();
@@ -18,6 +20,8 @@ app.use(requestLogger);
 app.use(healthRoutes);
 app.use(tenantRoutes);
 app.use(projectRoutes);
+app.use(apiKeyRoutes);
+app.use(webhookEndpointRoutes);
 
 app.use(errorHandler);
 
