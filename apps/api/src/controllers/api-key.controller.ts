@@ -11,15 +11,32 @@ export const createApiKeyController = async (
     const projectIdParam = req.params.projectId;
 
     if (typeof projectIdParam !== "string") {
-        throw new AppError(
-         "Project ID is required",
-          400,
-         "INVALID_PROJECT_ID"
-        );
+      throw new AppError(
+        "Project ID is required",
+        400,
+        "INVALID_PROJECT_ID"
+      );
     }
-    const projectId = projectIdParam;
-    const { name } = req.body;
 
+    const authenticatedProjectId = req.auth?.projectId;
+
+    if (!authenticatedProjectId) {
+      throw new AppError(
+        "Authentication required",
+        401,
+        "UNAUTHENTICATED"
+      );
+    }
+
+    if (projectIdParam !== authenticatedProjectId) {
+      throw new AppError(
+        "You do not have access to this project",
+        403,
+        "PROJECT_ACCESS_DENIED"
+      );
+    }
+
+    const { name } = req.body;
 
     if (!name || typeof name !== "string") {
       throw new AppError(
@@ -30,8 +47,8 @@ export const createApiKeyController = async (
     }
 
     const result = await createApiKey({
-      projectId,
-      name: name.trim()
+      projectId: authenticatedProjectId,
+      name: name.trim(),
     });
 
     if (!result) {
@@ -48,8 +65,8 @@ export const createApiKeyController = async (
         projectId: result.apiKey.projectId,
         name: result.apiKey.name,
         key: result.key,
-        createdAt: result.apiKey.createdAt
-      }
+        createdAt: result.apiKey.createdAt,
+      },
     });
   } catch (error) {
     next(error);

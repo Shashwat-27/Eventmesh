@@ -8,15 +8,17 @@ export const createEventController = async (
   next: NextFunction
 ) => {
   try {
-    const { projectId, type, payload } = req.body;
+    const projectId = req.auth?.projectId;
 
-    if (!projectId || typeof projectId !== "string") {
+    if (!projectId) {
       throw new AppError(
-        "Project ID is required",
-        400,
-        "INVALID_PROJECT_ID"
+        "Authenticated project is required",
+        401,
+        "UNAUTHENTICATED"
       );
     }
+
+    const { type, payload } = req.body;
 
     if (!type || typeof type !== "string") {
       throw new AppError(

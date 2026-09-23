@@ -18,6 +18,24 @@ export const createWebhookEndpointController = async (
       );
     }
 
+    const authenticatedProjectId = req.auth?.projectId;
+
+    if (!authenticatedProjectId) {
+      throw new AppError(
+        "Authentication required",
+        401,
+        "UNAUTHENTICATED"
+      );
+    }
+
+    if (projectIdParam !== authenticatedProjectId) {
+      throw new AppError(
+        "You do not have access to this project",
+        403,
+        "PROJECT_ACCESS_DENIED"
+      );
+    }
+
     const { name, url } = req.body;
 
     if (!name || typeof name !== "string") {
@@ -37,7 +55,7 @@ export const createWebhookEndpointController = async (
     }
 
     const result = await createWebhookEndpoint({
-      projectId: projectIdParam,
+      projectId: authenticatedProjectId,
       name: name.trim(),
       url: url.trim(),
     });
