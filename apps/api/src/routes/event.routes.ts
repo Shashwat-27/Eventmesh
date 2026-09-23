@@ -1,0 +1,8 @@
+import { Router } from "express";
+import { createEventController } from "../controllers/event.controller.js";
+
+const router = Router();
+
+router.post("/v1/events", createEventController);
+
+export default router;
