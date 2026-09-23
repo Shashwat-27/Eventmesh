@@ -1,4 +1,5 @@
 import { prisma } from "./prisma.services.js";
+import { deliveryQueue } from "../queues/delivery.queue.js";
 
 export interface CreateEventInput {
   projectId: string;
@@ -12,14 +13,10 @@ export const createEvent = async ({
   payload,
 }: CreateEventInput) => {
   const project = await prisma.project.findUnique({
-    where: {
-      id: projectId,
-    },
+    where: { id: projectId },
   });
 
-  if (!project) {
-    return null;
-  }
+  if (!project) return null;
 
   const result = await prisma.$transaction(async (tx) => {
     const event = await tx.event.create({
@@ -37,17 +34,35 @@ export const createEvent = async ({
       },
     });
 
-    if (endpoints.length > 0) {
-      await tx.delivery.createMany({
-        data: endpoints.map((endpoint) => ({
-          eventId: event.id,
-          webhookEndpointId: endpoint.id,
-        })),
-      });
+    if (endpoints.length === 0) {
+      return {
+        event,
+        deliveries: [],
+      };
     }
 
-    return event;
+    const deliveries = await Promise.all(
+      endpoints.map((endpoint) =>
+        tx.delivery.create({
+          data: {
+            eventId: event.id,
+            webhookEndpointId: endpoint.id,
+          },
+        })
+      )
+    );
+
+    return {
+      event,
+      deliveries,
+    };
   });
 
-  return result;
+  for (const delivery of result.deliveries) {
+    await deliveryQueue.add("deliver-webhook", {
+      deliveryId: delivery.id,
+    });
+  }
+
+  return result.event;
 };

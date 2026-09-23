@@ -8,7 +8,8 @@
     "dev": "tsx watch src/server.ts",
     "worker": "tsx watch src/worker.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "webhook:test": "tsx watch src/webhook-test-server.ts"
   },
   "keywords": [],
   "author": "",
