@@ -14,5 +14,10 @@ coverage/
 
 .vscode/
 .idea/
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
 
 docker-data/
+apps/api/src/generated
