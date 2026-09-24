@@ -822,3 +822,19 @@ Webhook Consumer
 ## One-line revision
 
 > **Server request accept karta hai → middleware request process karta hai → route request ko controller tak bhejta hai → controller application/service logic trigger karta hai → data layer database se interact karti hai → response client ko return hota hai → errors centralized handler se manage hote hain.**
+
+
+docker compose up -d
+
+npm run dev --workspace=@eventmesh/api
+
+npm run worker --workspace=@eventmesh/api
+
+npm run webhook:test --workspace=@eventmesh/api
+
+npx prisma migrate dev --name xyz
+
+npx prisma generate
+
+
+em_live_257636a5bdea36c7bd691cf3aade13cb9d3980caab9e3de166cb030bda248a67

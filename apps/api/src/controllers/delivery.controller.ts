@@ -63,11 +63,11 @@ export const retryDeliveryController = async (
     }
 
     res.status(202).json({
-      data: {
-        id: result.delivery.id,
-        status: result.delivery.status,
-      },
-    });
+  data: {
+    id: result.deliveryId,
+    status: "PENDING",
+  },
+});
   } catch (error) {
     next(error);
   }

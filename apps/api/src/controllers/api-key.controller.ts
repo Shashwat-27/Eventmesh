@@ -18,24 +18,6 @@ export const createApiKeyController = async (
       );
     }
 
-    const authenticatedProjectId = req.auth?.projectId;
-
-    if (!authenticatedProjectId) {
-      throw new AppError(
-        "Authentication required",
-        401,
-        "UNAUTHENTICATED"
-      );
-    }
-
-    if (projectIdParam !== authenticatedProjectId) {
-      throw new AppError(
-        "You do not have access to this project",
-        403,
-        "PROJECT_ACCESS_DENIED"
-      );
-    }
-
     const { name } = req.body;
 
     if (!name || typeof name !== "string") {
@@ -47,7 +29,7 @@ export const createApiKeyController = async (
     }
 
     const result = await createApiKey({
-      projectId: authenticatedProjectId,
+      projectId: projectIdParam,
       name: name.trim(),
     });
 

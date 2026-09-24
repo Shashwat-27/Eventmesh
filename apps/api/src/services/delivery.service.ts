@@ -34,22 +34,31 @@ export const retryDelivery = async (
     };
   }
 
-  const updatedDelivery = await prisma.delivery.update({
+  const result = await prisma.delivery.updateMany({
     where: {
       id: delivery.id,
+      status: "DEAD",
     },
     data: {
       status: "PENDING",
       lastError: null,
+      nextRetryAt: null,
     },
   });
 
+  if (result.count === 0) {
+    return {
+      type: "INVALID_STATUS" as const,
+      status: "PENDING" as const,
+    };
+  }
+
   await deliveryQueue.add("deliver-webhook", {
-    deliveryId: updatedDelivery.id,
+    deliveryId: delivery.id,
   });
 
   return {
     type: "SUCCESS" as const,
-    delivery: updatedDelivery,
+    deliveryId: delivery.id,
   };
 };
